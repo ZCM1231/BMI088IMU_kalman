@@ -103,11 +103,36 @@ void IMU_TempCtrl_Loop(void)
     }
     else
     {
+        /* ====== 开始计时 ====== */
+        uint32_t start_cycles = DWT_CYCCNT;
+        
         /* EKF预测步骤 (使用陀螺仪) */
         EKF_Predict(&ekf, &gyro_vec, EKF_DT);
         
         /* EKF更新步骤 (使用加速度计) */
         EKF_Update(&ekf, &accel_vec);
+        
+        /* ====== 结束计时并更新统计 ====== */
+        uint32_t end_cycles = DWT_CYCCNT;
+        uint32_t elapsed = end_cycles - start_cycles;
+        
+        // 更新统计数据
+        ekf_timing.last_cycles = elapsed;
+        ekf_timing.count++;
+        ekf_timing.total_cycles += elapsed;
+        
+        if (elapsed < ekf_timing.min_cycles) {
+            ekf_timing.min_cycles = elapsed;
+        }
+        if (elapsed > ekf_timing.max_cycles) {
+            ekf_timing.max_cycles = elapsed;
+        }
+        
+        // 转换为微秒 (方便观测)
+        ekf_timing.last_us = (float)elapsed * 1000000.0f / (float)CPU_FREQ_HZ;
+        ekf_timing.min_us = (float)ekf_timing.min_cycles * 1000000.0f / (float)CPU_FREQ_HZ;
+        ekf_timing.max_us = (float)ekf_timing.max_cycles * 1000000.0f / (float)CPU_FREQ_HZ;
+        ekf_timing.avg_us = (float)ekf_timing.total_cycles / (float)ekf_timing.count * 1000000.0f / (float)CPU_FREQ_HZ;
     }
     
     /* 构建USB数据包 */
