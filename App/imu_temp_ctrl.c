@@ -36,6 +36,25 @@ static uint8_t ekf_initialized = 0;
 /* EKF时间步长 (1ms = 0.001s) */
 #define EKF_DT  0.001f
 
+/* DWT计时相关宏 */
+#define DWT_CYCCNT   (*(volatile uint32_t *)0xE0001004)
+#define DWT_CONTROL  (*(volatile uint32_t *)0xE0001000)
+#define SCB_DEMCR    (*(volatile uint32_t *)0xE000EDFC)
+#define CPU_FREQ_HZ  480000000UL  // STM32H7主频，根据实际修改
+
+/* EKF执行时间统计变量 - 在Keil Watch窗口观测 */
+EKF_TimingStats_t ekf_timing = {
+    .last_cycles = 0,
+    .min_cycles = 0xFFFFFFFF,
+    .max_cycles = 0,
+    .total_cycles = 0,
+    .count = 0,
+    .last_us = 0,
+    .min_us = 0,
+    .max_us = 0,
+    .avg_us = 0
+};
+
 /**
   * @brief  IMU温控初始化
   * @retval None
