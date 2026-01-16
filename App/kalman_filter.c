@@ -178,6 +178,65 @@ void EKF_Init(AttitudeEKF_t *ekf, const Vec3_t *initial_accel) {
 
 
 // ==============================================================================
+// 四元数积分辅助函数
+// ==============================================================================
+
+/**
+ * @brief  计算四元数导数 dq/dt = 0.5 * Ω(ω) * q
+ * @param  q: 四元数 [w,x,y,z]
+ * @param  omega: 角速度矩阵 (4x4)
+ * @param  q_dot: 输出导数
+ */
+static void Quat_Derivative(const float q[4], const float omega[4][4], float q_dot[4]) {
+    for (int i = 0; i < 4; i++) {
+        q_dot[i] = 0.0f;
+        for (int j = 0; j < 4; j++) {
+            q_dot[i] += 0.5f * omega[i][j] * q[j];
+        }
+    }
+}
+
+/**
+ * @brief  RK4四阶龙格-库塔四元数积分
+ * @param  q_old: 输入四元数 [w,x,y,z]
+ * @param  omega: 角速度矩阵 (4x4)
+ * @param  dt: 时间步长 (秒)
+ * @param  q_new: 输出四元数 [w,x,y,z]
+ * @note   误差量级 O(dt^5)，比一阶欧拉法 O(dt^2) 精度高
+ */
+static void Quat_RK4_Integrate(const float q_old[4], const float omega[4][4], 
+                                float dt, float q_new[4]) {
+    float k1[4], k2[4], k3[4], k4[4];
+    float q_temp[4];
+    
+    // k1 = f(q, t)
+    Quat_Derivative(q_old, omega, k1);
+    
+    // k2 = f(q + k1*dt/2, t+dt/2)
+    for (int i = 0; i < 4; i++) {
+        q_temp[i] = q_old[i] + k1[i] * dt * 0.5f;
+    }
+    Quat_Derivative(q_temp, omega, k2);
+    
+    // k3 = f(q + k2*dt/2, t+dt/2)
+    for (int i = 0; i < 4; i++) {
+        q_temp[i] = q_old[i] + k2[i] * dt * 0.5f;
+    }
+    Quat_Derivative(q_temp, omega, k3);
+    
+    // k4 = f(q + k3*dt, t+dt)
+    for (int i = 0; i < 4; i++) {
+        q_temp[i] = q_old[i] + k3[i] * dt;
+    }
+    Quat_Derivative(q_temp, omega, k4);
+    
+    // q_new = q_old + (k1 + 2*k2 + 2*k3 + k4) * dt/6
+    for (int i = 0; i < 4; i++) {
+        q_new[i] = q_old[i] + (k1[i] + 2.0f*k2[i] + 2.0f*k3[i] + k4[i]) * dt / 6.0f;
+    }
+}
+
+// ==============================================================================
 // EKF预测步骤
 // ==============================================================================
 
@@ -201,16 +260,22 @@ void EKF_Predict(AttitudeEKF_t *ekf, const Vec3_t *gyro_meas, float dt) {
         {wz,     wy,   -wx,   0.0f}
     };
     
-    // 预测四元数: q_new = (I + 0.5*omega*dt) * q
+    // 预测四元数: 根据配置选择积分方法
     float q_old[4] = {q0, q1, q2, q3};
-    float q_new[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    float q_new[4];
     
+#if USE_RK4_INTEGRATION
+    // RK4四阶龙格-库塔积分 (高精度，误差 O(dt^5))
+    Quat_RK4_Integrate(q_old, omega, dt, q_new);
+#else
+    // 一阶欧拉法积分 (快速，误差 O(dt^2))
     for (int i = 0; i < 4; i++) {
         q_new[i] = q_old[i]; // I * q
         for (int j = 0; j < 4; j++) {
             q_new[i] += 0.5f * omega[i][j] * dt * q_old[j];
         }
     }
+#endif
     
     // 归一化四元数
     float q_norm = sqrtf(q_new[0]*q_new[0] + q_new[1]*q_new[1] +
