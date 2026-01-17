@@ -28,9 +28,9 @@ const float KF_MEASUREMENT_NOISE_A = 1e-0f;
 const float KF_DT_NOMINAL = 1.0f / 1000.0f;
 
 // 自适应观测噪声参数
-const float KF_ADAPTIVE_R_THRESHOLD = 0.15f;  // 水平加速度阈值 (归一化)
+const float KF_ADAPTIVE_R_THRESHOLD = 0.05f;  // 加速度偏离1g的阈值 (5%)
 const float KF_ADAPTIVE_R_MAX_SCALE = 100.0f; // R的最大放大倍数
-const float KF_ADAPTIVE_R_EXPONENT = 1.0f;    // 缩放幂指数 (1.0=线性, >1激进, <1保守)
+const float KF_ADAPTIVE_R_EXPONENT = 1.0f;    // 缩放幂指数 
 
 // 偏置限幅
 const float KF_MAX_BIAS = 0.0f;
@@ -309,29 +309,20 @@ void EKF_Predict(AttitudeEKF_t *ekf, const Vec3_t *gyro_meas, float dt) {
 // ==============================================================================
 
 void EKF_Update(AttitudeEKF_t *ekf, const Vec3_t *acc_meas) {
-    // 归一化加速度
-    Vec3_t z = *acc_meas;
-    Vec3_Normalize(&z);
-    
-    // 提取四元数
-    float qw = ekf->x.q.w;
-    float qx = ekf->x.q.x;
-    float qy = ekf->x.q.y;
-    float qz = ekf->x.q.z;
-    
     // --- 自适应观测噪声 R ---
-    // 1. 构建旋转矩阵 R(q) 并将归一化加速度转到导航系
-    // R^T * z (从机体系到导航系)
-    float acc_nav_x = (1 - 2*(qy*qy + qz*qz)) * z.x + 2*(qx*qy + qw*qz) * z.y + 2*(qx*qz - qw*qy) * z.z;
-    float acc_nav_y = 2*(qx*qy - qw*qz) * z.x + (1 - 2*(qx*qx + qz*qz)) * z.y + 2*(qy*qz + qw*qx) * z.z;
+    // 计算加速度模值（归一化前）
+    float acc_norm = sqrtf(acc_meas->x * acc_meas->x + 
+                           acc_meas->y * acc_meas->y + 
+                           acc_meas->z * acc_meas->z);
     
-    // 2. 计算水平加速度（理论上应该为0）
-    ekf->acc_horizontal = sqrtf(acc_nav_x * acc_nav_x + acc_nav_y * acc_nav_y);
+    // 计算加速度偏离1g的程度（理论上静止时应为0）
+    float acc_deviation = fabsf(acc_norm / 9.81f - 1.0f);
+    ekf->acc_horizontal = acc_deviation;  // 复用这个变量用于调试观测
     
-    // 3. 动态调整 R
-    if (ekf->acc_horizontal > ekf->adaptive_r_threshold) {
-        // 水平加速度越大，R 越大（权重越低）
-        float ratio = ekf->acc_horizontal / ekf->adaptive_r_threshold;
+    // 动态调整 R
+    if (acc_deviation > ekf->adaptive_r_threshold) {
+        // 加速度模值偏离1g越多，R 越大（权重越低）
+        float ratio = acc_deviation / ekf->adaptive_r_threshold;
         ekf->r_scale = powf(ratio, ekf->adaptive_r_exponent);
         // 限制最大缩放倍数
         if (ekf->r_scale > ekf->adaptive_r_max_scale) {
@@ -343,6 +334,16 @@ void EKF_Update(AttitudeEKF_t *ekf, const Vec3_t *acc_meas) {
         ekf->r_scale = 1.0f;
         ekf->R = ekf->R_base;
     }
+    
+    // 归一化加速度
+    Vec3_t z = *acc_meas;
+    Vec3_Normalize(&z);
+    
+    // 提取四元数
+    float qw = ekf->x.q.w;
+    float qx = ekf->x.q.x;
+    float qy = ekf->x.q.y;
+    float qz = ekf->x.q.z;
     
     // 预测观测 z_pred (重力方向)
     float z_pred[3];
