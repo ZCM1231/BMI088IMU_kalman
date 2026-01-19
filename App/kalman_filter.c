@@ -320,10 +320,14 @@ void EKF_Update(AttitudeEKF_t *ekf, const Vec3_t *acc_meas) {
     float qz = ekf->x.q.z;
     
     // --- 自适应观测噪声 R ---
-    // 1. 构建旋转矩阵 R(q) 并将归一化加速度转到导航系
-    // R^T * z (从机体系到导航系)
-    float acc_nav_x = (1 - 2*(qy*qy + qz*qz)) * z.x + 2*(qx*qy + qw*qz) * z.y + 2*(qx*qz - qw*qy) * z.z;
-    float acc_nav_y = 2*(qx*qy - qw*qz) * z.x + (1 - 2*(qx*qx + qz*qz)) * z.y + 2*(qy*qz + qw*qx) * z.z;
+    // 1. 构建旋转矩阵 Cnb 并将归一化加速度转到导航系
+    // fn = Cnb * fb (从机体系到导航系)
+    // Cnb 矩阵（四元数表示）:
+    // [1-2(qy²+qz²),  2(qxqy-qwqz),  2(qxqz+qwqy)]
+    // [2(qxqy+qwqz),  1-2(qx²+qz²),  2(qyqz-qwqx)]
+    // [2(qxqz-qwqy),  2(qyqz+qwqx),  1-2(qx²+qy²)]
+    float acc_nav_x = (1 - 2*(qy*qy + qz*qz)) * z.x + 2*(qx*qy - qw*qz) * z.y + 2*(qx*qz + qw*qy) * z.z;
+    float acc_nav_y = 2*(qx*qy + qw*qz) * z.x + (1 - 2*(qx*qx + qz*qz)) * z.y + 2*(qy*qz - qw*qx) * z.z;
     
     // 2. 计算水平加速度（理论上应该为0）
     ekf->acc_horizontal = sqrtf(acc_nav_x * acc_nav_x + acc_nav_y * acc_nav_y);
