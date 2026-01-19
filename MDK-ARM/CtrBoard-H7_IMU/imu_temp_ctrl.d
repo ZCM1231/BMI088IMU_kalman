@@ -32,11 +32,12 @@ ctrboard-h7_imu/imu_temp_ctrl.o: ..\App\imu_temp_ctrl.c \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_ll_usb.h \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_hal_pcd_ex.h \
   ..\App\inc\kalman_filter.h ..\App\inc\kalman_config.h \
-  ..\Device\BMI088\inc\BMI088driver.h ..\Core\Inc\gpio.h \
-  ..\Core\Inc\tim.h ..\USB_DEVICE\App\usbd_cdc_if.h \
+  ..\App\inc\imu_flash.h ..\Device\BMI088\inc\BMI088driver.h \
+  ..\Core\Inc\gpio.h ..\Core\Inc\tim.h ..\USB_DEVICE\App\usbd_cdc_if.h \
   ..\Middlewares\STM32_USB_Device_Library\Class\CDC\Inc\usbd_cdc.h \
   ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_ioreq.h \
   ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_def.h \
   ..\USB_DEVICE\Target\usbd_conf.h \
   ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_core.h \
-  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h
+  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h \
+  ..\App\inc\imu_commands.h

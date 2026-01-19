@@ -1,9 +1,5 @@
-ctrboard-h7_imu/usbd_cdc_if.o: ..\USB_DEVICE\App\usbd_cdc_if.c \
-  ..\USB_DEVICE\App\usbd_cdc_if.h \
-  ..\Middlewares\STM32_USB_Device_Library\Class\CDC\Inc\usbd_cdc.h \
-  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_ioreq.h \
-  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_def.h \
-  ..\USB_DEVICE\Target\usbd_conf.h ..\Core\Inc\main.h \
+ctrboard-h7_imu/imu_commands.o: ..\App\imu_commands.c \
+  ..\App\inc\imu_commands.h ..\App\inc\imu_flash.h \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_hal.h \
   ..\Core\Inc\stm32h7xx_hal_conf.h \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_hal_rcc.h \
@@ -35,6 +31,4 @@ ctrboard-h7_imu/usbd_cdc_if.o: ..\USB_DEVICE\App\usbd_cdc_if.c \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_hal_pcd.h \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_ll_usb.h \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_hal_pcd_ex.h \
-  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_core.h \
-  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h \
-  ..\App\inc\port_usb.h
+  ..\App\inc\msg_server.h

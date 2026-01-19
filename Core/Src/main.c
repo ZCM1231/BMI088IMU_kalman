@@ -28,6 +28,9 @@
 #include "BMI088driver.h"
 #include "imu_temp_ctrl.h"
 #include "usb_device.h"
+#include "msg_server.h"
+#include "port_usb.h"
+#include "imu_commands.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,6 +99,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
   MX_USB_DEVICE_Init();
   HAL_Delay(100);  /* 等待USB枚举 */
+  
+  /* 初始化消息服务器和命令处理 */
+  msg_server_init();
+  port_usb_init();
+  imu_commands_register();
+  
   IMU_TempCtrl_Init();
   /* USER CODE END 2 */
 
@@ -106,7 +115,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    IMU_TempCtrl_Loop();
+    /* USB 帧解析 */
+    port_usb_process();
+    
+    /* 命令分发处理 */
+    msg_server_poll();
+    
+    /* IMU 数据处理（仅在未暂停时） */
+    if (!imu_is_suspended()) {
+        IMU_TempCtrl_Loop();
+    }
   }
   /* USER CODE END 3 */
 }

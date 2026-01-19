@@ -646,6 +646,31 @@
               <FileType>1</FileType>
               <FilePath>..\App\kalman_filter.c</FilePath>
             </File>
+            <File>
+              <FileName>crc16_ccitt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\crc16_ccitt.c</FilePath>
+            </File>
+            <File>
+              <FileName>imu_commands.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\imu_commands.c</FilePath>
+            </File>
+            <File>
+              <FileName>imu_flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\imu_flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>msg_server.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\msg_server.c</FilePath>
+            </File>
+            <File>
+              <FileName>port_usb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\port_usb.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

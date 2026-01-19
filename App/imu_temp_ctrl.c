@@ -12,6 +12,8 @@
 #include "gpio.h"
 #include "tim.h"
 #include "usbd_cdc_if.h"
+#include "imu_commands.h"
+#include "imu_flash.h"
 #include <string.h>
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,6 +71,9 @@ void IMU_TempCtrl_Init(void)
     {
         ;
     }
+    
+    /* 加载 IMU 校准配置 (g_imu_config 在 imu_commands.h 中声明) */
+    flash_read_or_init_imu_config(&g_imu_config);
 }
 
 /**
@@ -89,6 +94,61 @@ void IMU_TempCtrl_Loop(void)
     
     /* 读取IMU数据 */
     BMI088_read(gyro, accel, &temp);
+    
+    /* 应用校准数据（正常模式下） */
+    if (!imu_get_calibration_mode()) {
+        /* 应用加速度计校准 */
+        /* 加速度计数据在 BMI088_read 中已转换为 m/s²，需要先转回 g 单位 */
+        float ax_g = accel[0] / 9.80665f;
+        float ay_g = accel[1] / 9.80665f;
+        float az_g = accel[2] / 9.80665f;
+        
+        /* 减去偏置 */
+        ax_g -= g_imu_config.accel_bias[0];
+        ay_g -= g_imu_config.accel_bias[1];
+        az_g -= g_imu_config.accel_bias[2];
+        
+        /* 应用缩放矩阵 */
+        float ax_cal = g_imu_config.accel_scale[0][0] * ax_g +
+                       g_imu_config.accel_scale[0][1] * ay_g +
+                       g_imu_config.accel_scale[0][2] * az_g;
+        float ay_cal = g_imu_config.accel_scale[1][0] * ax_g +
+                       g_imu_config.accel_scale[1][1] * ay_g +
+                       g_imu_config.accel_scale[1][2] * az_g;
+        float az_cal = g_imu_config.accel_scale[2][0] * ax_g +
+                       g_imu_config.accel_scale[2][1] * ay_g +
+                       g_imu_config.accel_scale[2][2] * az_g;
+        
+        /* 转回 m/s² */
+        accel[0] = ax_cal * 9.80665f;
+        accel[1] = ay_cal * 9.80665f;
+        accel[2] = az_cal * 9.80665f;
+        
+        /* 应用陀螺仪校准 */
+        /* 陀螺仪数据在 BMI088_read 中已转换为 rad/s */
+        const float DEG_TO_RAD = 0.0174532925f;
+        
+        /* 转换偏置为 rad/s（存储时是 deg/s） */
+        float bias_x_rad = g_imu_config.gyro_bias[0] * DEG_TO_RAD;
+        float bias_y_rad = g_imu_config.gyro_bias[1] * DEG_TO_RAD;
+        float bias_z_rad = g_imu_config.gyro_bias[2] * DEG_TO_RAD;
+        
+        /* 减去偏置 */
+        float gx = gyro[0] - bias_x_rad;
+        float gy = gyro[1] - bias_y_rad;
+        float gz = gyro[2] - bias_z_rad;
+        
+        /* 应用缩放矩阵 */
+        gyro[0] = g_imu_config.gyro_scale[0][0] * gx +
+                  g_imu_config.gyro_scale[0][1] * gy +
+                  g_imu_config.gyro_scale[0][2] * gz;
+        gyro[1] = g_imu_config.gyro_scale[1][0] * gx +
+                  g_imu_config.gyro_scale[1][1] * gy +
+                  g_imu_config.gyro_scale[1][2] * gz;
+        gyro[2] = g_imu_config.gyro_scale[2][0] * gx +
+                  g_imu_config.gyro_scale[2][1] * gy +
+                  g_imu_config.gyro_scale[2][2] * gz;
+    }
     
     /* PID计算 */
     err_ll = err_l;
@@ -187,8 +247,11 @@ void IMU_TempCtrl_Loop(void)
     /* 温度原始值 - 转换为ICM42688格式: temp = raw/132.48 + 25, 所以 raw = (temp-25)*132.48 */
     packet.temperature = (uint16_t)((temp - 25.0f) * 132.48f);
     
-    /* 状态位 */
+    /* 状态位: bit1=标定模式 */
     packet.status = 0x00;
+    if (imu_get_calibration_mode()) {
+        packet.status |= (1 << 1);  /* 设置 bit1 */
+    }
     
     /* 计算CRC (不包含CRC字段本身) */
     packet.crc = CRC16_Calculate((uint8_t*)&packet, sizeof(packet) - 2);

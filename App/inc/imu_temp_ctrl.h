@@ -15,8 +15,10 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "kalman_filter.h"
+#include "imu_flash.h"
 
 /* Exported types ------------------------------------------------------------*/
+/* 注意: EKF_TimingStats_t 已在 kalman_filter.h 中定义 */
 
 /* USB数据包结构体 (参考App工程格式) */
 #pragma pack(push, 1)  // 1字节对齐
