@@ -21,6 +21,7 @@
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -31,6 +32,7 @@
 #include "msg_server.h"
 #include "port_usb.h"
 #include "imu_commands.h"
+#include "lcd.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,17 +97,22 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_SPI2_Init();
+  MX_SPI1_Init();
   MX_TIM3_Init();
-  /* USER CODE BEGIN 2 */
   MX_USB_DEVICE_Init();
+  /* USER CODE BEGIN 2 */
+  /* LCD 初始化 */
+  LCD_Init();
   HAL_Delay(100);  /* 等待USB枚举 */
-  
   /* 初始化消息服务器和命令处理 */
   msg_server_init();
   port_usb_init();
   imu_commands_register();
   
   IMU_TempCtrl_Init();
+  
+	LCD_Fill(0,0,LCD_W,LCD_H,BLACK);	
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -151,14 +158,15 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 2;
   RCC_OscInitStruct.PLL.PLLN = 40;
   RCC_OscInitStruct.PLL.PLLP = 1;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
   RCC_OscInitStruct.PLL.PLLR = 2;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;

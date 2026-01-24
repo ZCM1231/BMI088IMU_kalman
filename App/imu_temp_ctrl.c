@@ -14,7 +14,9 @@
 #include "usbd_cdc_if.h"
 #include "imu_commands.h"
 #include "imu_flash.h"
+#include "lcd.h"
 #include <string.h>
+#include <stdio.h>
 
 /* Private function prototypes -----------------------------------------------*/
 static uint16_t CRC16_Calculate(const uint8_t *data, uint16_t len);
@@ -34,6 +36,10 @@ static uint16_t imu_timestamp = 0;
 /* EKF滤波器实例 */
 AttitudeEKF_t ekf;
 static uint8_t ekf_initialized = 0;
+
+/* LCD 刷新控制 (每100ms刷新一次，约10Hz) */
+static uint16_t lcd_refresh_counter = 0;
+#define LCD_REFRESH_INTERVAL  30  /* 100次循环 = 100ms @ 1kHz */
 
 /* EKF时间步长 (1ms = 0.001s) */
 #define EKF_DT  0.001f
@@ -258,6 +264,77 @@ void IMU_TempCtrl_Loop(void)
     
     /* 通过USB发送 */
     CDC_Transmit_HS((uint8_t*)&packet, sizeof(packet));
+    
+    /* ========== LCD 显示 ========== */
+    lcd_refresh_counter++;
+    if (lcd_refresh_counter >= LCD_REFRESH_INTERVAL)
+    {
+        lcd_refresh_counter = 0;
+        
+        char str[32];
+        uint16_t y = 0;
+        const uint16_t x_offset = 40;  /* 整体右移40像素 */
+        
+        /* 标题 */
+        LCD_ShowString(x_offset, y, (uint8_t*)"IMU Data Monitor", CYAN, BLACK, 16, 0);
+        y += 20;
+        
+        /* 加速度 (m/s^2) */
+        LCD_ShowString(x_offset, y, (uint8_t*)"Accel(m/s2):", WHITE, BLACK, 12, 0);
+        y += 14;
+        sprintf(str, "X:%+7.2f", accel[0]);
+        LCD_ShowString(x_offset, y, (uint8_t*)str, GREEN, BLACK, 12, 0);
+        sprintf(str, "Y:%+7.2f", accel[1]);
+        LCD_ShowString(x_offset + 80, y, (uint8_t*)str, GREEN, BLACK, 12, 0);
+        sprintf(str, "Z:%+7.2f", accel[2]);
+        LCD_ShowString(x_offset + 160, y, (uint8_t*)str, GREEN, BLACK, 12, 0);
+        y += 16;
+        
+        /* 角速度 (rad/s) */
+        LCD_ShowString(x_offset, y, (uint8_t*)"Gyro(rad/s):", WHITE, BLACK, 12, 0);
+        y += 14;
+        sprintf(str, "X:%+6.3f", gyro[0]);
+        LCD_ShowString(x_offset, y, (uint8_t*)str, YELLOW, BLACK, 12, 0);
+        sprintf(str, "Y:%+6.3f", gyro[1]);
+        LCD_ShowString(x_offset + 80, y, (uint8_t*)str, YELLOW, BLACK, 12, 0);
+        sprintf(str, "Z:%+6.3f", gyro[2]);
+        LCD_ShowString(x_offset + 160, y, (uint8_t*)str, YELLOW, BLACK, 12, 0);
+        y += 16;
+        
+        /* 四元数 */
+        LCD_ShowString(x_offset, y, (uint8_t*)"Quaternion:", WHITE, BLACK, 12, 0);
+        y += 14;
+        sprintf(str, "W:%+6.3f", ekf.x.q.w);
+        LCD_ShowString(x_offset, y, (uint8_t*)str, MAGENTA, BLACK, 12, 0);
+        sprintf(str, "X:%+6.3f", ekf.x.q.x);
+        LCD_ShowString(x_offset + 60, y, (uint8_t*)str, MAGENTA, BLACK, 12, 0);
+        sprintf(str, "Y:%+6.3f", ekf.x.q.y);
+        LCD_ShowString(x_offset + 120, y, (uint8_t*)str, MAGENTA, BLACK, 12, 0);
+        sprintf(str, "Z:%+6.3f", ekf.x.q.z);
+        LCD_ShowString(x_offset + 180, y, (uint8_t*)str, MAGENTA, BLACK, 12, 0);
+        y += 16;
+        
+        /* r_scale (自适应R缩放因子) */
+        LCD_ShowString(x_offset, y, (uint8_t*)"EKF Params:", WHITE, BLACK, 12, 0);
+        y += 14;
+        sprintf(str, "r_scale:%6.2f", ekf.r_scale);
+        LCD_ShowString(x_offset, y, (uint8_t*)str, RED, BLACK, 12, 0);
+        sprintf(str, "acc_h:%5.2f", ekf.acc_horizontal);
+        LCD_ShowString(x_offset + 100, y, (uint8_t*)str, RED, BLACK, 12, 0);
+        y += 16;
+        
+        /* 运动/静止状态 */
+        if (ekf.acc_horizontal > ekf.adaptive_r_threshold) {
+            LCD_ShowString(x_offset, y, (uint8_t*)"Status: MOVING ", RED, BLACK, 16, 0);
+        } else {
+            LCD_ShowString(x_offset, y, (uint8_t*)"Status: STATIC ", GREEN, BLACK, 16, 0);
+        }
+        y += 20;
+
+        /* 温度 */
+        sprintf(str, "Temp: %.1fC", temp);
+        LCD_ShowString(x_offset + 140, y, (uint8_t*)str, LIGHTBLUE, BLACK, 12, 0);
+    }
 }
 
 /**

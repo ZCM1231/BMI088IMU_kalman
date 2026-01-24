@@ -31,11 +31,11 @@ ctrboard-h7_imu/usb_device.o: ..\USB_DEVICE\App\usb_device.c \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_hal_pcd.h \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_ll_usb.h \
   ..\Drivers\STM32H7xx_HAL_Driver\Inc\stm32h7xx_hal_pcd_ex.h \
-  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_def.h \
+  ..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_def.h \
   ..\USB_DEVICE\Target\usbd_conf.h ..\Core\Inc\main.h \
-  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_core.h \
-  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_ioreq.h \
-  ..\Middlewares\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h \
+  ..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_core.h \
+  ..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ioreq.h \
+  ..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h \
   ..\USB_DEVICE\App\usbd_desc.h \
-  ..\Middlewares\STM32_USB_Device_Library\Class\CDC\Inc\usbd_cdc.h \
+  ..\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Inc\usbd_cdc.h \
   ..\USB_DEVICE\App\usbd_cdc_if.h

@@ -1,4 +1,4 @@
-ctrboard-h7_imu/usbd_conf.o: ..\USB_DEVICE\Target\usbd_conf.c \
+ctrboard-h7_imu/usbd_conf_1.o: ..\USB_DEVICE\Target\usbd_conf.c \
   ..\Drivers\CMSIS\Device\ST\STM32H7xx\Include\stm32h7xx.h \
   ..\Drivers\CMSIS\Device\ST\STM32H7xx\Include\stm32h723xx.h \
   ..\Drivers\CMSIS\Include\core_cm7.h \

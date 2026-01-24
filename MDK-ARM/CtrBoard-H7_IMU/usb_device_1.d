@@ -1,4 +1,5 @@
-ctrboard-h7_imu/usbd_conf.o: ..\USB_DEVICE\Target\usbd_conf.c \
+ctrboard-h7_imu/usb_device_1.o: ..\USB_DEVICE\App\usb_device.c \
+  ..\USB_DEVICE\App\usb_device.h \
   ..\Drivers\CMSIS\Device\ST\STM32H7xx\Include\stm32h7xx.h \
   ..\Drivers\CMSIS\Device\ST\STM32H7xx\Include\stm32h723xx.h \
   ..\Drivers\CMSIS\Include\core_cm7.h \
@@ -35,4 +36,6 @@ ctrboard-h7_imu/usbd_conf.o: ..\USB_DEVICE\Target\usbd_conf.c \
   ..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_core.h \
   ..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ioreq.h \
   ..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h \
-  ..\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Inc\usbd_cdc.h
+  ..\USB_DEVICE\App\usbd_desc.h \
+  ..\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Inc\usbd_cdc.h \
+  ..\USB_DEVICE\App\usbd_cdc_if.h

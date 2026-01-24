@@ -55,11 +55,12 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 extern DMA_HandleTypeDef hdma_spi2_rx;
 extern DMA_HandleTypeDef hdma_spi2_tx;
 extern SPI_HandleTypeDef hspi2;
 /* USER CODE BEGIN EV */
-extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
+
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -257,12 +258,20 @@ void EXTI15_10_IRQHandler(void)
   /* USER CODE END EXTI15_10_IRQn 1 */
 }
 
-/* USER CODE BEGIN 1 */
 /**
-  * @brief This function handles USB OTG HS global interrupt.
+  * @brief This function handles USB On The Go HS global interrupt.
   */
 void OTG_HS_IRQHandler(void)
 {
+  /* USER CODE BEGIN OTG_HS_IRQn 0 */
+
+  /* USER CODE END OTG_HS_IRQn 0 */
   HAL_PCD_IRQHandler(&hpcd_USB_OTG_HS);
+  /* USER CODE BEGIN OTG_HS_IRQn 1 */
+
+  /* USER CODE END OTG_HS_IRQn 1 */
 }
+
+/* USER CODE BEGIN 1 */
+
 /* USER CODE END 1 */

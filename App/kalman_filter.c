@@ -16,26 +16,6 @@
 #endif
 
 // ==============================================================================
-// 配置常量定义（在kalman_config.h中声明）
-// ==============================================================================
-
-// EKF参数
-const float KF_PROCESS_NOISE_Q = 1e-5f;
-const float KF_PROCESS_NOISE_B = 1e-10f;
-const float KF_MEASUREMENT_NOISE_A = 1e-0f;
-
-// 滤波器参数 (BMI088陀螺仪1000Hz, dt=1ms)
-const float KF_DT_NOMINAL = 1.0f / 1000.0f;
-
-// 自适应观测噪声参数
-const float KF_ADAPTIVE_R_THRESHOLD = 0.15f;  // 水平加速度阈值 (归一化)
-const float KF_ADAPTIVE_R_MAX_SCALE = 100.0f; // R的最大放大倍数
-const float KF_ADAPTIVE_R_EXPONENT = 1.0f;    // 缩放幂指数 (1.0=线性, >1激进, <1保守)
-
-// 偏置限幅
-const float KF_MAX_BIAS = 0.0f;
-
-// ==============================================================================
 // 辅助函数 - 基础数学运算
 // ==============================================================================
 

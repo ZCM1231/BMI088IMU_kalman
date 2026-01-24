@@ -5,25 +5,28 @@
 extern "C" {
 #endif
 
-// EKF参数（外部声明）
-extern const float KF_PROCESS_NOISE_Q;
-extern const float KF_PROCESS_NOISE_B;
-extern const float KF_MEASUREMENT_NOISE_A;
+// ============ EKF 参数配置 (使用宏定义避免被链接器优化) ============
 
-// 滤波器参数（外部声明）
-extern const float KF_DT_NOMINAL;
+// 过程噪声
+#define KF_PROCESS_NOISE_Q      1e-5f   // 四元数过程噪声
+#define KF_PROCESS_NOISE_B      1e-8f   // 陀螺仪偏置过程噪声
 
-// 自适应观测噪声参数（外部声明）
-extern const float KF_ADAPTIVE_R_THRESHOLD;
-extern const float KF_ADAPTIVE_R_MAX_SCALE;
-extern const float KF_ADAPTIVE_R_EXPONENT;
+// 观测噪声
+#define KF_MEASUREMENT_NOISE_A  0.1f    // 加速度计观测噪声
 
-// 偏置限幅（外部声明）
-extern const float KF_MAX_BIAS;
+// 时间步长
+#define KF_DT_NOMINAL           (1.0f / 1000.0f)  // 1ms
+
+// 自适应观测噪声参数
+#define KF_ADAPTIVE_R_THRESHOLD  0.15f  // 水平加速度阈值 (m/s^2)
+#define KF_ADAPTIVE_R_MAX_SCALE  100.0f // R的最大缩放倍数
+#define KF_ADAPTIVE_R_EXPONENT   1.0f   // 缩放幂指数 (1.0=线性)
+
+// 偏置限幅
+#define KF_MAX_BIAS             0.0f    // 最大陀螺仪偏置 (rad/s)
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif // __KALMAN_CONFIG_H__
-
