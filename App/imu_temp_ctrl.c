@@ -17,6 +17,7 @@
 #include "lcd.h"
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 /* Private function prototypes -----------------------------------------------*/
 static uint16_t CRC16_Calculate(const uint8_t *data, uint16_t len);
@@ -194,7 +195,10 @@ void IMU_TempCtrl_Loop(void)
         /* EKF预测步骤 (使用陀螺仪) */
         EKF_Predict(&ekf, &gyro_vec, EKF_DT);
         
-        /* EKF更新步骤 (使用加速度计) */
+        /* 静止检测（必须在 Update 之前，用于自适应 R） */
+        EKF_StaticDetect(&ekf, &gyro_vec, &accel_vec);
+        
+        /* EKF更新步骤 (使用加速度计，内部使用 is_static) */
         EKF_Update(&ekf, &accel_vec);
         
         /* ====== 结束计时并更新统计 ====== */
@@ -323,13 +327,25 @@ void IMU_TempCtrl_Loop(void)
         LCD_ShowString(x_offset + 100, y, (uint8_t*)str, RED, BLACK, 12, 0);
         y += 16;
         
-        /* 运动/静止状态 */
+        /* EKF 状态（加速度计可信度） */
         if (ekf.acc_horizontal > ekf.adaptive_r_threshold) {
-            LCD_ShowString(x_offset, y, (uint8_t*)"Status: MOVING ", RED, BLACK, 16, 0);
+            LCD_ShowString(x_offset, y, (uint8_t*)"EKF: CONVERGING", YELLOW, BLACK, 12, 0);
         } else {
-            LCD_ShowString(x_offset, y, (uint8_t*)"Status: STATIC ", GREEN, BLACK, 16, 0);
+            LCD_ShowString(x_offset, y, (uint8_t*)"EKF: STABLE    ", GREEN, BLACK, 12, 0);
         }
-        y += 20;
+        y += 16;
+        
+        /* 静止检测（从 EKF 结构体读取） */
+        sprintf(str, "Gyro:%.3f", ekf.gyro_norm);
+        LCD_ShowString(x_offset, y, (uint8_t*)str, WHITE, BLACK, 12, 0);
+        sprintf(str, "|A|:%.2f", ekf.accel_norm);
+        LCD_ShowString(x_offset + 80, y, (uint8_t*)str, WHITE, BLACK, 12, 0);
+        if (ekf.is_static) {
+            LCD_ShowString(x_offset + 160, y, (uint8_t*)"STATIC", GREEN, BLACK, 12, 0);
+        } else {
+            LCD_ShowString(x_offset + 160, y, (uint8_t*)"MOVING", RED, BLACK, 12, 0);
+        }
+        y += 16;
 
         /* 温度 */
         sprintf(str, "Temp: %.1fC", temp);

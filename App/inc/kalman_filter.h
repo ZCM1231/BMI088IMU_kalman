@@ -70,6 +70,13 @@ typedef struct {
   // 新息（测量残差，用于调试）
   float y[3];
   
+  // 静止检测
+  float gyro_norm;        // 陀螺仪模值 (rad/s)
+  float accel_norm;       // 加速度计模值 (m/s²)
+  uint8_t is_static;      // 静止标志 (1=静止, 0=运动)
+  float static_gyro_thresh;   // 陀螺仪静止阈值
+  float static_accel_dev;     // 加速度偏离重力阈值
+  
 } AttitudeEKF_t;
 
 // ==============================================================================
@@ -120,6 +127,16 @@ void EKF_Predict(AttitudeEKF_t *ekf, const Vec3_t *gyro_meas, float dt);
  * @retval None
  */
 void EKF_Update(AttitudeEKF_t *ekf, const Vec3_t *acc_meas);
+
+/**
+ * @brief  静止检测（基于陀螺仪和加速度计）
+ * @param  ekf: EKF结构体指针
+ * @param  gyro: 陀螺仪测量值 (rad/s)
+ * @param  accel: 加速度计测量值 (m/s²)
+ * @retval None
+ * @note   结果存储在 ekf->is_static, ekf->gyro_norm, ekf->accel_norm
+ */
+void EKF_StaticDetect(AttitudeEKF_t *ekf, const Vec3_t *gyro, const Vec3_t *accel);
 
 /**
  * @brief  四元数转欧拉角

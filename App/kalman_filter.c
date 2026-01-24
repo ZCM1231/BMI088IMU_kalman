@@ -93,6 +93,13 @@ void EKF_Init(AttitudeEKF_t *ekf, const Vec3_t *initial_accel) {
     ekf->y[1] = 0.0f;
     ekf->y[2] = 0.0f;
     
+    // 静止检测参数
+    ekf->static_gyro_thresh = KF_STATIC_GYRO_THRESH;
+    ekf->static_accel_dev = KF_STATIC_ACCEL_DEV;
+    ekf->gyro_norm = 0.0f;
+    ekf->accel_norm = 0.0f;
+    ekf->is_static = 1;
+    
     // 从加速度计初始化姿态
     float ax = initial_accel->x;
     float ay = initial_accel->y;
@@ -312,20 +319,23 @@ void EKF_Update(AttitudeEKF_t *ekf, const Vec3_t *acc_meas) {
     // 2. 计算水平加速度（理论上应该为0）
     ekf->acc_horizontal = sqrtf(acc_nav_x * acc_nav_x + acc_nav_y * acc_nav_y);
     
-    // 3. 动态调整 R
-    if (ekf->acc_horizontal > ekf->adaptive_r_threshold) {
-        // 水平加速度越大，R 越大（权重越低）
+    // 3. 动态调整 R（混合方案：静止检测 + acc_horizontal）
+    if (ekf->is_static) {
+        // 真正静止：完全信任加速度计
+        ekf->r_scale = 1.0f;
+        ekf->R = ekf->R_base;
+    } else if (ekf->acc_horizontal > ekf->adaptive_r_threshold) {
+        // 运动且 acc_h 大：根据 acc_h 调整
         float ratio = ekf->acc_horizontal / ekf->adaptive_r_threshold;
         ekf->r_scale = powf(ratio, ekf->adaptive_r_exponent);
-        // 限制最大缩放倍数
         if (ekf->r_scale > ekf->adaptive_r_max_scale) {
             ekf->r_scale = ekf->adaptive_r_max_scale;
         }
         Mat3_Scale(&ekf->R, &ekf->R_base, ekf->r_scale);
     } else {
-        // 接近静止，使用基础 R
-        ekf->r_scale = 1.0f;
-        ekf->R = ekf->R_base;
+        // 运动但 acc_h 小（姿态收敛中）：使用中等 R
+        ekf->r_scale = 2.0f;  // 中等缩放，加速收敛
+        Mat3_Scale(&ekf->R, &ekf->R_base, ekf->r_scale);
     }
     
     // 预测观测 z_pred (重力方向)
@@ -553,3 +563,18 @@ void EKF_CalculateAccelOnlyEuler(AttitudeEKF_t *ekf, const Vec3_t *acc_meas) {
     ekf->accel_only_euler[2] = 0.0f;  // Yaw无法从加速度计获得
 }
 
+// ==============================================================================
+// 静止检测
+// ==============================================================================
+
+void EKF_StaticDetect(AttitudeEKF_t *ekf, const Vec3_t *gyro, const Vec3_t *accel) {
+    // 计算陀螺仪模值
+    ekf->gyro_norm = sqrtf(gyro->x * gyro->x + gyro->y * gyro->y + gyro->z * gyro->z);
+    
+    // 计算加速度计模值
+    ekf->accel_norm = sqrtf(accel->x * accel->x + accel->y * accel->y + accel->z * accel->z);
+    
+    // 静止判定：陀螺仪几乎不动 且 加速度接近重力
+    ekf->is_static = (ekf->gyro_norm < ekf->static_gyro_thresh) && 
+                     (fabsf(ekf->accel_norm - ekf->g) < ekf->static_accel_dev);
+}

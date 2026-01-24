@@ -25,6 +25,10 @@ extern "C" {
 // 偏置限幅
 #define KF_MAX_BIAS             0.0f    // 最大陀螺仪偏置 (rad/s)
 
+// 静止检测参数
+#define KF_STATIC_GYRO_THRESH   0.1f    // 陀螺仪静止阈值 (rad/s)
+#define KF_STATIC_ACCEL_DEV     1.0f    // 加速度偏离重力阈值 (m/s²)
+
 #ifdef __cplusplus
 }
 #endif
